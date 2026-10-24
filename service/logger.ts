@@ -52,9 +52,22 @@ const append = async (line: string): Promise<void> => {
   }
 };
 
+/**
+ * Messages carry request values (a directory may contain a newline), so control
+ * characters and line separators are escaped to keep one message on one line and
+ * forge no entries. Backslashes are doubled so a literal `\x0a` stays distinct.
+ */
+const escapeControl = (text: string): string =>
+  text.replace(/[\\\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, (c) => {
+    if (c === '\\') return '\\\\';
+    const code = c.charCodeAt(0);
+    return code < 0x100 ? `\\x${code.toString(16).padStart(2, '0')}` : `\\u${code.toString(16)}`;
+  });
+
 /** Write one line to stderr and the rolling log file. */
 export const log = (message: string): void => {
-  const line = `${new Date().toISOString()} ${message}\n`;
-  process.stderr.write(`[openwith] ${message}\n`);
+  const safe = escapeControl(message);
+  const line = `${new Date().toISOString()} ${safe}\n`;
+  process.stderr.write(`[openwith] ${safe}\n`);
   queue = queue.then(() => append(line));
 };

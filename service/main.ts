@@ -18,6 +18,7 @@
 
 import http from 'node:http';
 import { spawn, type ChildProcess } from 'node:child_process';
+import { timingSafeEqual } from 'node:crypto';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 
@@ -163,8 +164,11 @@ const quoteWindows = (value: string): string => `"${value.replace(/"/g, '""')}"`
  * a batch file cannot be started directly; real executables (the terminal, the
  * file manager) are started as-is, so a terminal still gets its own window.
  */
-const planFor = async (command: string, args: string[]): Promise<LaunchPlan> => {
+const planFor = async (command: string, args: string[]): Promise<LaunchPlan | 'unsafe-path'> => {
   if (os === 'windows' && (await isWindowsBatch(command))) {
+    // cmd.exe expands %VAR% even inside quotes, so a directory named after an
+    // environment variable could rewrite the command line; refuse such paths.
+    if (args.some((arg) => /[%!"\r\n]/.test(arg))) return 'unsafe-path';
     return {
       file: [command, ...args].map(quoteWindows).join(' '),
       args: [],
@@ -175,8 +179,11 @@ const planFor = async (command: string, args: string[]): Promise<LaunchPlan> => 
   return { file: command, args, shell: false, windowsHide: false };
 };
 
-/** The command that opens `directory` in `app`, or null when there is none. */
-const launchPlan = async (app: OpenApp, directory: string): Promise<LaunchPlan | null> => {
+/**
+ * The command that opens `directory` in `app`, null when there is none, or
+ * 'unsafe-path' when the directory cannot be passed through cmd.exe safely.
+ */
+const launchPlan = async (app: OpenApp, directory: string): Promise<LaunchPlan | 'unsafe-path' | null> => {
   // On macOS, an editor's own CLI is the reliable way to open a folder: it
   // hands the path to a running instance and raises its window, and it still
   // works when LaunchServices declines to launch the app from this process.
@@ -262,11 +269,18 @@ const json = (res: http.ServerResponse, status: number, body: unknown): void => 
   res.end(JSON.stringify(body));
 };
 
+/** A request body is a directory and an app id; anything longer is refused. */
+const MAX_BODY_CHARS = 64 * 1024;
+
 const readBody = (req: http.IncomingMessage): Promise<string> => new Promise((resolve, reject) => {
   let body = '';
   req.on('data', (chunk) => {
     body += chunk;
-    if (body.length > 1_000_000) reject(new Error('request too large'));
+    if (body.length > MAX_BODY_CHARS) {
+      // Stop reading, so an oversized body is not buffered after the refusal.
+      req.destroy();
+      reject(new Error('request too large'));
+    }
   });
   req.on('end', () => resolve(body));
   req.on('error', reject);
@@ -278,9 +292,17 @@ const resolveDirectory = (value: unknown): string | null => {
   return path.isAbsolute(resolved) ? resolved : null;
 };
 
+const EXPECTED_AUTH = Buffer.from(`Bearer ${TOKEN}`);
+
+/** Constant-time token check, so response timing does not leak the token. */
+const authorized = (header: string | undefined): boolean => {
+  const given = Buffer.from(header ?? '');
+  return given.length === EXPECTED_AUTH.length && timingSafeEqual(given, EXPECTED_AUTH);
+};
+
 const server = http.createServer((req, res) => {
   void (async () => {
-    if (req.headers.authorization !== `Bearer ${TOKEN}`) {
+    if (!authorized(req.headers.authorization)) {
       json(res, 401, { error: 'unauthorized' });
       return;
     }
@@ -338,6 +360,11 @@ const server = http.createServer((req, res) => {
       if (!state.installed[app.id]) {
         log(`open refused: not-installed (${app.id})`);
         json(res, 409, { ok: false, error: 'not-installed' });
+        return;
+      }
+      if (plan === 'unsafe-path') {
+        log(`open refused: unsafe-path (${app.id} ${directory})`);
+        json(res, 400, { ok: false, error: 'unsafe-path' });
         return;
       }
       try {

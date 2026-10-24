@@ -51,7 +51,8 @@ panel (iframe) --openUrl--> host --browser--> https://example.com/?path=<project
 
 `/open` 的错误码：`invalid-request`（缺参数）、`no-directory`（目录不存在）、
 `not-a-directory`、`unknown-app`、`unsupported`（该平台无启动方式）、
-`not-installed`（检测为未安装）。所有响应未携带正确令牌的一律 401。
+`not-installed`（检测为未安装）、`unsafe-path`（Windows 上经 cmd.exe 启动时路径含 `%` `!` 等
+特殊字符，拒绝以免命令被改写）。所有响应未携带正确令牌的一律 401。
 
 相比 Makefile 版本，这里不再需要事件流：检测结果是静态的（带缓存），打开是一次性动作，
 因此服务只提供请求／应答，面板不再维护事件游标。
