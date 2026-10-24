@@ -79,7 +79,12 @@ panel (iframe) --serviceRequest--> host --127.0.0.1:port--> service --spawn--> o
   its window; everything else uses `open -a "<name>" <directory>`. On Windows and
   Linux the app's command is run with the directory (a Windows `.cmd` launcher,
   such as VS Code's `code`, is run through `cmd`, since a batch file cannot be
-  started directly). The child is detached, so
+  started directly). On Linux the host starts the service without the desktop
+  session variables (`DISPLAY`, `WAYLAND_DISPLAY`, `XAUTHORITY`,
+  `XDG_CURRENT_DESKTOP`, `KDE_SESSION_VERSION`, `DBUS_SESSION_BUS_ADDRESS` and a
+  few more, listed in `service/sessionEnv.ts`), so the missing ones are taken
+  from `systemctl --user show-environment`, or from the sockets in
+  `XDG_RUNTIME_DIR`, before an app is launched. The child is detached, so
   the service never waits on an editor you keep open, and the launcher's exit
   code is checked, so a failure is reported instead of a false success.
 
@@ -154,11 +159,12 @@ service, so the link tiles stay usable while the service is off.
 | `service` | the local service detects installed apps and starts the one you pick; it runs with your full user rights |
 
 The service declares `permissions.exec` with the launchers it may run — `open`
-plus the app commands, the `which` / `where` lookup and, on Windows, `cmd` (the
-editor launchers are `.cmd` files there) — so the approval dialog says what it
-intends to run. The extension asks for no other capability: it reads
-no session data and no project files. The custom web links live in the
-extension's own storage, which needs no extra capability.
+plus the app commands, the `which` / `where` lookup, `systemctl` (Linux, read-only
+`show-environment`) and, on Windows, `cmd` (the editor launchers are `.cmd`
+files there) — so the approval dialog says what it intends to run. The extension
+asks for no other capability: it reads no session data and no project files. The
+custom web links live in the extension's own storage, which needs no extra
+capability.
 
 ## Limitations
 

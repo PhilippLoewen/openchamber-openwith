@@ -68,6 +68,10 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
   前台；其余软件用 `open -a "<名称>" <目录>`。Windows、Linux 用 `<命令> <目录>`；
   Windows 上 `.cmd` 启动器（VS Code、Cursor）经 `cmd` 运行并转义目录，因为批处理
   文件无法直接作为进程启动，其余真实可执行程序仍直接启动。
+  Linux 上宿主启动服务时不带桌面会话环境变量（`DISPLAY`、`WAYLAND_DISPLAY`、
+  `XAUTHORITY`、`XDG_CURRENT_DESKTOP`、`KDE_SESSION_VERSION`、`DBUS_SESSION_BUS_ADDRESS`
+  等，完整列表见 `service/sessionEnv.ts`），因此启动
+  软件前会从 `systemctl --user show-environment` 或 `XDG_RUNTIME_DIR` 中的套接字补齐缺失项。
   子进程会脱离服务运行，因此服务不会等你一直开着的编辑器；启动器的退出码会被检查，
   失败时如实报错，不再出现「已打开」的假成功。
 
@@ -133,7 +137,8 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
 | `service` | 本地服务负责检测已安装的软件并启动所选软件；它以你的完整用户权限运行 |
 
 服务声明了 `permissions.exec`，列出它可能运行的启动器 —— `open` 以及各软件命令、
-`which` / `where` 查找，Windows 上还有 `cmd`（编辑器启动器在那里是 `.cmd` 文件）——
+`which` / `where` 查找、`systemctl`（Linux，只读的 `show-environment`），Windows 上
+还有 `cmd`（编辑器启动器在那里是 `.cmd` 文件）——
 因此权限弹窗会明确说明它打算运行什么。扩展不申请其他能力：既不读取会话数据，也不
 访问项目文件。自定义网页链接保存在扩展自己的存储里，同样不需要额外能力。
 

@@ -11,6 +11,8 @@
  * exists (macOS) or its command is on PATH (Windows/Linux); launching is
  * `open -a "<name>" <directory>` on macOS and `<command> <directory>` elsewhere
  * (a Windows `.cmd` launcher is run through cmd.exe, which such a file needs).
+ * On Linux the desktop session variables the host drops are recovered before
+ * launching; see `sessionEnv.ts`.
  *
  * Protocol: the host passes OPENCHAMBER_SERVICE_PORT and
  * OPENCHAMBER_SERVICE_TOKEN; every request needs `Authorization: Bearer <token>`.
@@ -24,6 +26,7 @@ import path from 'node:path';
 
 import { appsForOS, findApp, type OpenApp, type OpenAppOS } from '../src/apps.ts';
 import { LOG_FILE, log } from './logger.ts';
+import { loadSessionEnv } from './sessionEnv.ts';
 
 const PORT = Number(process.env.OPENCHAMBER_SERVICE_PORT);
 const TOKEN = process.env.OPENCHAMBER_SERVICE_TOKEN ?? '';
@@ -123,9 +126,29 @@ const detectCached = (force: boolean): Promise<Detection> => {
 // Launching
 // ---------------------------------------------------------------------------
 
+/**
+ * The environment apps are launched with. On Linux the host drops the desktop
+ * session variables, so they are recovered once at startup; see sessionEnv.ts.
+ */
+const launchEnv: Promise<NodeJS.ProcessEnv> =
+  os === 'linux'
+    ? loadSessionEnv(process.env).then(({ env, filled, missing }) => {
+        if (filled.length > 0) {
+          log(`session env filled in: ${filled.map(({ name, from }) => `${name} (${from})`).join(', ')}`);
+        }
+        if (missing.length > 0) log(`session env still missing: ${missing.join(', ')}`);
+        return env;
+      })
+    : Promise.resolve(process.env);
+
 type LaunchPlan = {
   file: string;
   args: string[];
+  /**
+   * Working directory of the app: the project. The service's own cwd can be
+   * gone (a rebuild replaces dist/), which shell launchers like xdg-open trip on.
+   */
+  cwd: string;
   /** Windows `.cmd`/`.bat` shims must be run by cmd.exe, so `shell` is set. */
   shell: boolean;
   /** Hide the console window; only the cmd.exe wrapper needs it. */
@@ -164,7 +187,7 @@ const quoteWindows = (value: string): string => `"${value.replace(/"/g, '""')}"`
  * a batch file cannot be started directly; real executables (the terminal, the
  * file manager) are started as-is, so a terminal still gets its own window.
  */
-const planFor = async (command: string, args: string[]): Promise<LaunchPlan | 'unsafe-path'> => {
+const planFor = async (command: string, args: string[], cwd: string): Promise<LaunchPlan | 'unsafe-path'> => {
   if (os === 'windows' && (await isWindowsBatch(command))) {
     // cmd.exe expands %VAR% even inside quotes, so a directory named after an
     // environment variable could rewrite the command line; refuse such paths.
@@ -172,11 +195,12 @@ const planFor = async (command: string, args: string[]): Promise<LaunchPlan | 'u
     return {
       file: [command, ...args].map(quoteWindows).join(' '),
       args: [],
+      cwd,
       shell: true,
       windowsHide: true,
     };
   }
-  return { file: command, args, shell: false, windowsHide: false };
+  return { file: command, args, cwd, shell: false, windowsHide: false };
 };
 
 /**
@@ -188,12 +212,12 @@ const launchPlan = async (app: OpenApp, directory: string): Promise<LaunchPlan |
   // hands the path to a running instance and raises its window, and it still
   // works when LaunchServices declines to launch the app from this process.
   if (app.command && (os !== 'macos' || app.preferCommand)) {
-    return planFor(app.command, [directory]);
+    return planFor(app.command, [directory], directory);
   }
   if (os === 'macos' && app.macApp) {
-    return { file: 'open', args: ['-a', app.macApp, directory], shell: false, windowsHide: false };
+    return { file: 'open', args: ['-a', app.macApp, directory], cwd: directory, shell: false, windowsHide: false };
   }
-  if (app.command) return planFor(app.command, [directory]);
+  if (app.command) return planFor(app.command, [directory], directory);
   return null;
 };
 
@@ -213,7 +237,7 @@ const LAUNCH_TIMEOUT_MS = 4_000;
  * success. A launcher that stays in the foreground past the timeout is treated
  * as launched and unref'd.
  */
-const launch = (plan: LaunchPlan): Promise<void> =>
+const launch = (plan: LaunchPlan, env: NodeJS.ProcessEnv): Promise<void> =>
   new Promise((resolve, reject) => {
     if (DRY_RUN) {
       console.error(`[openwith] dry-run ${JSON.stringify(plan)}`);
@@ -223,6 +247,8 @@ const launch = (plan: LaunchPlan): Promise<void> =>
     let child: ChildProcess;
     try {
       child = spawn(plan.file, plan.args, {
+        cwd: plan.cwd,
+        env,
         detached: true,
         stdio: ['ignore', 'ignore', 'pipe'],
         shell: plan.shell,
@@ -369,7 +395,7 @@ const server = http.createServer((req, res) => {
       }
       try {
         log(`launching ${app.id}: ${plan.file} ${plan.args.join(' ')}`);
-        await launch(plan);
+        await launch(plan, await launchEnv);
         log(`launched ${app.id} for ${directory}`);
         json(res, 200, { ok: true });
       } catch (error) {
