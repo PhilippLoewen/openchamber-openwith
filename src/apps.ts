@@ -46,6 +46,8 @@ export type OpenApp = {
   macApp?: string;
   /** CLI binary used on Windows/Linux, and as a macOS fallback. */
   command?: string;
+  /** Alternative binary names, checked after `command`. */
+  commandAliases?: string[];
   /**
    * macOS: prefer `command <directory>` over `open -a`. Editor CLIs open the
    * folder in a running instance and raise its window, and they still work when
@@ -88,7 +90,7 @@ const LINUX_APPS: OpenApp[] = [
   { id: 'vscode', name: 'Visual Studio Code', icon: 'vscode', command: 'code' },
   { id: 'vscodium', name: 'VSCodium', icon: 'vscode', command: 'codium' },
   { id: 'cursor', name: 'Cursor', icon: 'cursor', command: 'cursor' },
-  { id: 'zed', name: 'Zed', icon: 'zed', command: 'zed' },
+  { id: 'zed', name: 'Zed', icon: 'zed', command: 'zed', commandAliases: ['zeditor'] },
   { id: 'sublime-text', name: 'Sublime Text', icon: 'sublime-text', command: 'subl' },
   { id: 'file-manager', name: 'Files', labelKey: 'app.fileManager', icon: 'file-manager', command: 'xdg-open' },
 ];

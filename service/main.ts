@@ -89,6 +89,14 @@ const macBundleExists = async (name: string): Promise<boolean> => {
   return false;
 };
 
+const commandOnPath = async (app: OpenApp): Promise<string | undefined> => {
+  const commands = app.command ? [app.command, ...(app.commandAliases ?? [])] : [];
+  for (const command of commands) {
+    if (await onPath(command)) return command;
+  }
+  return undefined;
+};
+
 const appInstalled = async (app: OpenApp): Promise<boolean> => {
   if (os === 'macos') {
     // A bundle is the usual install; a command covers Homebrew CLIs and editors
@@ -97,8 +105,7 @@ const appInstalled = async (app: OpenApp): Promise<boolean> => {
     if (app.command && (await onPath(app.command))) return true;
     return false;
   }
-  if (app.command) return onPath(app.command);
-  return false;
+  return (await commandOnPath(app)) !== undefined;
 };
 
 const detect = async (): Promise<Detection> => {
@@ -208,11 +215,12 @@ const planFor = async (command: string, args: string[], cwd: string): Promise<La
  * 'unsafe-path' when the directory cannot be passed through cmd.exe safely.
  */
 const launchPlan = async (app: OpenApp, directory: string): Promise<LaunchPlan | 'unsafe-path' | null> => {
+  const command = os === 'macos' ? app.command : (await commandOnPath(app)) ?? app.command;
   // On macOS, an editor's own CLI is the reliable way to open a folder: it
   // hands the path to a running instance and raises its window, and it still
   // works when LaunchServices declines to launch the app from this process.
-  if (app.command && (os !== 'macos' || app.preferCommand)) {
-    return planFor(app.command, [directory], directory);
+  if (command && (os !== 'macos' || app.preferCommand)) {
+    return planFor(command, [directory], directory);
   }
   if (os === 'macos' && app.macApp) {
     return { file: 'open', args: ['-a', app.macApp, directory], cwd: directory, shell: false, windowsHide: false };

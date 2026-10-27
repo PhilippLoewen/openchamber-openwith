@@ -61,7 +61,8 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
 
 - **`GET /apps`** 检测本机装了哪些软件。macOS 上，`.app` 位于 `/Applications`、
   `/System/Applications` 或 `~/Applications`，或其命令在 PATH 上，即视为已安装；
-  Windows、Linux 上则用 `where` / `which` 查找命令。结果会缓存一小段时间，
+  Windows、Linux 上则用 `where` / `which` 查找命令。Linux 上的 Zed 同时支持 `zed`
+  和 `zeditor`，检测与启动均使用可用的命令，优先选择 `zed`。结果会缓存一小段时间，
   带 `?refresh=1` 可立即重新检测。
 - **`POST /open`** 校验项目目录与软件后启动它。macOS 上编辑器优先用自带命令行
   （`code`、`cursor`、`zed`、`subl <目录>`）：它会把目录交给已运行的实例并把窗口带到
