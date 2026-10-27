@@ -38,7 +38,7 @@
 - **一键打开** —— 把当前打开的项目交给所选软件。
 - **已安装的排在前面、一眼区分** —— 检测到的软件保留品牌色并排在前面，其余显示灰色，
   只点得到的才有效。
-- **编辑器、终端、文件管理器** —— VS Code、Cursor、Zed、Sublime Text、TextMate、
+- **编辑器、终端、文件管理器** —— VS Code、VSCodium、Cursor、Zed、Sublime Text、TextMate、
   Antigravity、Xcode、Android Studio、终端、iTerm2、Ghostty、Warp，以及各平台的
   文件管理器（Finder／资源管理器／文件）。
 - **自定义网页链接** —— 保存形如 `https://example.com/?path={path}` 的链接模板，
@@ -66,7 +66,7 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
 - **`POST /open`** 校验项目目录与软件后启动它。macOS 上编辑器优先用自带命令行
   （`code`、`cursor`、`zed`、`subl <目录>`）：它会把目录交给已运行的实例并把窗口带到
   前台；其余软件用 `open -a "<名称>" <目录>`。Windows、Linux 用 `<命令> <目录>`；
-  Windows 上 `.cmd` 启动器（VS Code、Cursor）经 `cmd` 运行并转义目录，因为批处理
+  Windows 上 `.cmd` 启动器（VS Code、VSCodium、Cursor）经 `cmd` 运行并转义目录，因为批处理
   文件无法直接作为进程启动，其余真实可执行程序仍直接启动。
   Linux 上宿主启动服务时不带桌面会话环境变量（`DISPLAY`、`WAYLAND_DISPLAY`、
   `XAUTHORITY`、`XDG_CURRENT_DESKTOP`、`KDE_SESSION_VERSION`、`DBUS_SESSION_BUS_ADDRESS`

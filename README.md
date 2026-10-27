@@ -42,9 +42,10 @@ installed app and the project OpenChamber has open is opened in it.
 - **Installed first, at a glance** — detected apps keep their brand colour and
   are listed first; the rest are greyed out, so you only click what is really
   there.
-- **Editors, terminals, file managers** — VS Code, Cursor, Zed, Sublime Text,
-  TextMate, Antigravity, Xcode, Android Studio, Terminal, iTerm2, Ghostty, Warp,
-  and the platform's file manager (Finder / File Explorer / Files).
+- **Editors, terminals, file managers** — VS Code, VSCodium, Cursor, Zed,
+  Sublime Text, TextMate, Antigravity, Xcode, Android Studio, Terminal, iTerm2,
+  Ghostty, Warp, and the platform's file manager (Finder / File Explorer /
+  Files).
 - **Your own web links** — save URL templates such as
   `https://example.com/?path={path}` and open the project on that page;
   `{path}` and `{pathUrlEncode}` are filled with the project directory.
