@@ -73,7 +73,8 @@ panel (iframe) --serviceRequest--> host --127.0.0.1:port--> service --spawn--> o
   installed when its `.app` bundle sits in `/Applications`, `/System/Applications`
   or `~/Applications`, or when its command is on PATH; on Windows and Linux the
   command is looked up with `where` / `which`. The result is cached for a short
-  while, and `?refresh=1` re-checks on demand.
+  while, and `?refresh=1` re-checks on demand. On Linux, Zed supports both `zed`
+  and `zeditor`; the available command is also used to launch it, preferring `zed`.
 - **`POST /open`** validates the project directory and the app, then launches it.
   On macOS an editor is opened with its own CLI (`code`, `cursor`, `zed`,
   `subl <directory>`), which opens the folder in a running instance and raises
