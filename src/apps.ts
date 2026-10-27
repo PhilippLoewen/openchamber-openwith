@@ -57,6 +57,7 @@ export type OpenApp = {
 /** Apps offered on macOS, most common first. */
 const MAC_APPS: OpenApp[] = [
   { id: 'vscode', name: 'Visual Studio Code', icon: 'vscode', macApp: 'Visual Studio Code', command: 'code', preferCommand: true },
+  { id: 'vscodium', name: 'VSCodium', icon: 'vscode', macApp: 'VSCodium', command: 'codium', preferCommand: true },
   { id: 'cursor', name: 'Cursor', icon: 'cursor', macApp: 'Cursor', command: 'cursor', preferCommand: true },
   { id: 'zed', name: 'Zed', icon: 'zed', macApp: 'Zed', command: 'zed', preferCommand: true },
   { id: 'sublime-text', name: 'Sublime Text', icon: 'sublime-text', macApp: 'Sublime Text', command: 'subl', preferCommand: true },
@@ -74,6 +75,7 @@ const MAC_APPS: OpenApp[] = [
 /** Apps offered on Windows. */
 const WINDOWS_APPS: OpenApp[] = [
   { id: 'vscode', name: 'Visual Studio Code', icon: 'vscode', command: 'code' },
+  { id: 'vscodium', name: 'VSCodium', icon: 'vscode', command: 'codium' },
   { id: 'cursor', name: 'Cursor', icon: 'cursor', command: 'cursor' },
   { id: 'zed', name: 'Zed', icon: 'zed', command: 'zed' },
   { id: 'sublime-text', name: 'Sublime Text', icon: 'sublime-text', command: 'subl' },
@@ -84,6 +86,7 @@ const WINDOWS_APPS: OpenApp[] = [
 /** Apps offered on Linux. */
 const LINUX_APPS: OpenApp[] = [
   { id: 'vscode', name: 'Visual Studio Code', icon: 'vscode', command: 'code' },
+  { id: 'vscodium', name: 'VSCodium', icon: 'vscode', command: 'codium' },
   { id: 'cursor', name: 'Cursor', icon: 'cursor', command: 'cursor' },
   { id: 'zed', name: 'Zed', icon: 'zed', command: 'zed' },
   { id: 'sublime-text', name: 'Sublime Text', icon: 'sublime-text', command: 'subl' },
