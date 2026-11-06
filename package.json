@@ -16,7 +16,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test scripts/test-scope.mjs"
+    "test": "npm run build && node --test scripts/test-zed.mjs scripts/test-scope.mjs"
   },
   "openchamber": {
     "apiVersion": 1,
