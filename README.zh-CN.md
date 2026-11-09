@@ -73,7 +73,10 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
   等，完整列表见 `service/sessionEnv.ts`），因此启动
   软件前会从 `systemctl --user show-environment` 或 `XDG_RUNTIME_DIR` 中的套接字补齐缺失项。
   子进程会脱离服务运行，因此服务不会等你一直开着的编辑器；启动器的退出码会被检查，
-  失败时如实报错，不再出现「已打开」的假成功。
+  失败时如实报错，不再出现「已打开」的假成功。Linux 上软件还会在独立的 systemd scope
+  中启动（`systemd-run --user --scope`）：OpenChamber 通常以 systemd 用户服务运行，
+  重启该服务会结束其 cgroup 内的所有进程，没有独立 scope 时已打开的编辑器会随之关闭。
+  没有 `systemd-run` 或连不上用户管理器时则直接启动。
 
 每一步都会写入 `~/.config/openchamber-openwith/logs/service.log`（10 MB 滚动，保留
 3 份备份）并同时输出到 stderr，方便事后排查打开失败的原因。
@@ -137,7 +140,8 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
 | `service` | 本地服务负责检测已安装的软件并启动所选软件；它以你的完整用户权限运行 |
 
 服务声明了 `permissions.exec`，列出它可能运行的启动器 —— `open` 以及各软件命令、
-`which` / `where` 查找、`systemctl`（Linux，只读的 `show-environment`），Windows 上
+`which` / `where` 查找、`systemctl`（Linux，只读的 `show-environment`）、`systemd-run`
+（Linux，为每个软件建立独立的 scope），Windows 上
 还有 `cmd`（编辑器启动器在那里是 `.cmd` 文件）——
 因此权限弹窗会明确说明它打算运行什么。扩展不申请其他能力：既不读取会话数据，也不
 访问项目文件。自定义网页链接保存在扩展自己的存储里，同样不需要额外能力。

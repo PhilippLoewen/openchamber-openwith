@@ -73,6 +73,9 @@ panel (iframe) --openUrl--> host --browser--> https://example.com/?path=<project
   - 其它平台：`<command> <directory>`。Windows 上 `.cmd` 启动器（VS Code、Cursor）
     经 `cmd.exe` 运行并转义目录，真实可执行程序（PowerShell、资源管理器）直接启动。
   - 子进程 `detached` 且 `unref()`，服务不会等待用户一直开着的编辑器；启动器退出码会被检查。
+  - Linux 上经 `systemd-run --user --scope` 为每个软件建立独立的 scope（单元名
+    `app-openwith-<id>-<随机>.scope`）。宿主以 systemd 用户服务运行时，重启服务会结束其
+    cgroup 内的全部进程，`detached` 并不能脱离 cgroup；首次启动前会试运行一次，不可用时直接启动。
 
 ---
 

@@ -16,7 +16,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node _temp/test-service.mjs && bun _temp/test-i18n.ts && bun _temp/test-weblinks.ts"
+    "test": "npm run build && node --test scripts/test-scope.mjs"
   },
   "openchamber": {
     "apiVersion": 1,
@@ -35,7 +35,7 @@
         "entry": "service/main.js",
         "runtime": "host",
         "permissions": {
-          "exec": ["open", "cmd", "which", "where", "systemctl", "code", "cursor", "zed", "subl", "ghostty", "warp", "powershell", "explorer", "xdg-open"]
+          "exec": ["open", "cmd", "which", "where", "systemctl", "systemd-run", "code", "cursor", "zed", "subl", "ghostty", "warp", "powershell", "explorer", "xdg-open"]
         }
       }
     }

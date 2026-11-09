@@ -86,7 +86,12 @@ panel (iframe) --serviceRequest--> host --127.0.0.1:port--> service --spawn--> o
   from `systemctl --user show-environment`, or from the sockets in
   `XDG_RUNTIME_DIR`, before an app is launched. The child is detached, so
   the service never waits on an editor you keep open, and the launcher's exit
-  code is checked, so a failure is reported instead of a false success.
+  code is checked, so a failure is reported instead of a false success. On Linux
+  the app is also started in a systemd scope of its own (`systemd-run --user
+  --scope`): OpenChamber usually runs as a systemd user service, and restarting
+  that service kills everything in its cgroup, so without the scope the editors
+  you opened would close with it. Without `systemd-run` or a reachable user
+  manager the app is started directly.
 
 Every step is written to `~/.config/openchamber-openwith/logs/service.log`
 (10 MB, rolling, three backups) as well as stderr, so a failed launch can be read
@@ -160,7 +165,7 @@ service, so the link tiles stay usable while the service is off.
 
 The service declares `permissions.exec` with the launchers it may run — `open`
 plus the app commands, the `which` / `where` lookup, `systemctl` (Linux, read-only
-`show-environment`) and, on Windows, `cmd` (the editor launchers are `.cmd`
+`show-environment`), `systemd-run` (Linux, to give each app its own scope) and, on Windows, `cmd` (the editor launchers are `.cmd`
 files there) — so the approval dialog says what it intends to run. The extension
 asks for no other capability: it reads no session data and no project files. The
 custom web links live in the extension's own storage, which needs no extra

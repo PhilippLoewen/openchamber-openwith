@@ -12,7 +12,8 @@
  * `open -a "<name>" <directory>` on macOS and `<command> <directory>` elsewhere
  * (a Windows `.cmd` launcher is run through cmd.exe, which such a file needs).
  * On Linux the desktop session variables the host drops are recovered before
- * launching; see `sessionEnv.ts`.
+ * launching; see `sessionEnv.ts`. Apps also get a systemd scope of their own
+ * there, so restarting the host's service unit does not close them.
  *
  * Protocol: the host passes OPENCHAMBER_SERVICE_PORT and
  * OPENCHAMBER_SERVICE_TOKEN; every request needs `Authorization: Bearer <token>`.
@@ -20,7 +21,7 @@
 
 import http from 'node:http';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 
@@ -221,6 +222,47 @@ const launchPlan = async (app: OpenApp, directory: string): Promise<LaunchPlan |
   return null;
 };
 
+const SCOPE_ARGS = ['--user', '--scope', '--quiet', '--collect'];
+
+let scopeSupport: Promise<boolean> | null = null;
+
+/**
+ * Linux: can apps be started in a systemd scope of their own? Checked once, by
+ * running `true` in one, so a machine without systemd-run or a reachable user
+ * manager keeps launching apps directly.
+ */
+const scopeAvailable = (env: NodeJS.ProcessEnv): Promise<boolean> => {
+  if (os !== 'linux') return Promise.resolve(false);
+  scopeSupport ??= new Promise<boolean>((resolve) => {
+    let child: ChildProcess;
+    try {
+      child = spawn('systemd-run', [...SCOPE_ARGS, '--', 'true'], { env, stdio: 'ignore', timeout: 2_000 });
+    } catch {
+      resolve(false);
+      return;
+    }
+    child.once('error', () => resolve(false));
+    child.once('close', (code) => resolve(code === 0));
+  }).then((available) => {
+    log(available ? 'launching apps in their own systemd scope' : 'systemd-run scope unavailable, launching apps directly');
+    return available;
+  });
+  return scopeSupport;
+};
+
+/**
+ * Run the plan in a transient systemd scope. OpenChamber usually runs as a
+ * systemd user service, and stopping or restarting it kills every process in
+ * its cgroup, detached children included; in a scope of its own an app opened
+ * from the panel outlives the host. systemd-run execs the command in place, so
+ * the launcher's exit code and stderr still reach `launch`.
+ */
+const inOwnScope = (plan: LaunchPlan, appId: string): LaunchPlan => ({
+  ...plan,
+  file: 'systemd-run',
+  args: [...SCOPE_ARGS, `--unit=app-openwith-${appId}-${randomBytes(4).toString('hex')}`, '--', plan.file, ...plan.args],
+});
+
 /**
  * Test hook: with this set the service records the command instead of running
  * it, so the service test can verify the plan without opening a real editor.
@@ -394,8 +436,10 @@ const server = http.createServer((req, res) => {
         return;
       }
       try {
-        log(`launching ${app.id}: ${plan.file} ${plan.args.join(' ')}`);
-        await launch(plan, await launchEnv);
+        const env = await launchEnv;
+        const run = (await scopeAvailable(env)) ? inOwnScope(plan, app.id) : plan;
+        log(`launching ${app.id}: ${run.file} ${run.args.join(' ')}`);
+        await launch(run, env);
         log(`launched ${app.id} for ${directory}`);
         json(res, 200, { ok: true });
       } catch (error) {
