@@ -27,6 +27,17 @@ export type AppIconId =
   | 'antigravity'
   | 'xcode'
   | 'android-studio'
+  | 'intellij-idea'
+  | 'pycharm'
+  | 'webstorm'
+  | 'phpstorm'
+  | 'goland'
+  | 'clion'
+  | 'rider'
+  | 'rubymine'
+  | 'datagrip'
+  | 'dataspell'
+  | 'rustrover'
   | 'powershell'
   | 'terminal'
   | 'iterm2'
@@ -44,6 +55,8 @@ export type OpenApp = {
   icon: AppIconId;
   /** macOS: the application name handed to `open -a`. */
   macApp?: string;
+  /** macOS: other bundle names of the same app (editions), checked after `macApp`. */
+  macAppAliases?: string[];
   /** CLI binary used on Windows/Linux, and as a macOS fallback. */
   command?: string;
   /** Alternative binary names, checked after `command`. */
@@ -54,7 +67,68 @@ export type OpenApp = {
    * LaunchServices refuses to launch the app from a background process.
    */
   preferCommand?: boolean;
+  /**
+   * Leave the tile out of the panel when the app is not installed, for app
+   * families too large to list greyed out (the JetBrains IDEs).
+   */
+  hideWhenMissing?: boolean;
 };
+
+/**
+ * The JetBrains IDEs. `command` is the launcher name the Toolbox App and most
+ * packages use; the aliases cover snap, AUR and edition-specific names.
+ */
+type JetBrainsIde = {
+  id: string;
+  name: string;
+  icon: AppIconId;
+  command: string;
+  aliases?: string[];
+  macApps?: string[];
+};
+
+const JETBRAINS_IDES: JetBrainsIde[] = [
+  {
+    id: 'intellij-idea',
+    name: 'IntelliJ IDEA',
+    icon: 'intellij-idea',
+    command: 'idea',
+    aliases: ['intellij-idea', 'intellij-idea-ultimate-edition', 'intellij-idea-community-edition', 'intellij-idea-ultimate', 'intellij-idea-community'],
+    macApps: ['IntelliJ IDEA', 'IntelliJ IDEA Ultimate', 'IntelliJ IDEA CE', 'IntelliJ IDEA Community Edition'],
+  },
+  {
+    id: 'pycharm',
+    name: 'PyCharm',
+    icon: 'pycharm',
+    command: 'pycharm',
+    aliases: ['pycharm-professional', 'pycharm-community', 'charm'],
+    macApps: ['PyCharm', 'PyCharm Professional Edition', 'PyCharm CE', 'PyCharm Community Edition'],
+  },
+  { id: 'webstorm', name: 'WebStorm', icon: 'webstorm', command: 'webstorm' },
+  { id: 'phpstorm', name: 'PhpStorm', icon: 'phpstorm', command: 'phpstorm' },
+  { id: 'goland', name: 'GoLand', icon: 'goland', command: 'goland' },
+  { id: 'clion', name: 'CLion', icon: 'clion', command: 'clion' },
+  { id: 'rider', name: 'Rider', icon: 'rider', command: 'rider', macApps: ['Rider', 'JetBrains Rider'] },
+  { id: 'rubymine', name: 'RubyMine', icon: 'rubymine', command: 'rubymine' },
+  { id: 'datagrip', name: 'DataGrip', icon: 'datagrip', command: 'datagrip' },
+  { id: 'dataspell', name: 'DataSpell', icon: 'dataspell', command: 'dataspell' },
+  { id: 'rustrover', name: 'RustRover', icon: 'rustrover', command: 'rustrover' },
+];
+
+/**
+ * The JetBrains catalog entries for a platform. On Windows a standalone install
+ * puts `<name>64.exe` on PATH and the Toolbox App a `<name>.cmd` script.
+ */
+const jetBrainsApps = (os: 'macos' | 'windows' | 'linux'): OpenApp[] =>
+  JETBRAINS_IDES.map((ide) => {
+    const base = { id: ide.id, name: ide.name, icon: ide.icon, hideWhenMissing: true };
+    if (os === 'macos') {
+      const [macApp, ...macAppAliases] = ide.macApps ?? [ide.name];
+      return { ...base, macApp, macAppAliases, command: ide.command };
+    }
+    if (os === 'windows') return { ...base, command: `${ide.command}64`, commandAliases: [ide.command] };
+    return { ...base, command: ide.command, commandAliases: ide.aliases };
+  });
 
 /** Apps offered on macOS, most common first. */
 const MAC_APPS: OpenApp[] = [
@@ -67,6 +141,7 @@ const MAC_APPS: OpenApp[] = [
   { id: 'antigravity', name: 'Antigravity', icon: 'antigravity', macApp: 'Antigravity' },
   { id: 'xcode', name: 'Xcode', icon: 'xcode', macApp: 'Xcode' },
   { id: 'android-studio', name: 'Android Studio', icon: 'android-studio', macApp: 'Android Studio' },
+  ...jetBrainsApps('macos'),
   { id: 'iterm2', name: 'iTerm2', icon: 'iterm2', macApp: 'iTerm' },
   { id: 'ghostty', name: 'Ghostty', icon: 'ghostty', macApp: 'Ghostty', command: 'ghostty' },
   { id: 'warp', name: 'Warp', icon: 'warp', macApp: 'Warp', command: 'warp' },
@@ -81,6 +156,8 @@ const WINDOWS_APPS: OpenApp[] = [
   { id: 'cursor', name: 'Cursor', icon: 'cursor', command: 'cursor' },
   { id: 'zed', name: 'Zed', icon: 'zed', command: 'zed' },
   { id: 'sublime-text', name: 'Sublime Text', icon: 'sublime-text', command: 'subl' },
+  ...jetBrainsApps('windows'),
+  { id: 'android-studio', name: 'Android Studio', icon: 'android-studio', command: 'studio64', commandAliases: ['studio'], hideWhenMissing: true },
   { id: 'powershell', name: 'PowerShell', icon: 'powershell', command: 'powershell' },
   { id: 'file-manager', name: 'File Explorer', labelKey: 'app.fileManager', icon: 'file-manager', command: 'explorer' },
 ];
@@ -92,6 +169,8 @@ const LINUX_APPS: OpenApp[] = [
   { id: 'cursor', name: 'Cursor', icon: 'cursor', command: 'cursor' },
   { id: 'zed', name: 'Zed', icon: 'zed', command: 'zed', commandAliases: ['zeditor'] },
   { id: 'sublime-text', name: 'Sublime Text', icon: 'sublime-text', command: 'subl' },
+  ...jetBrainsApps('linux'),
+  { id: 'android-studio', name: 'Android Studio', icon: 'android-studio', command: 'android-studio', commandAliases: ['studio'], hideWhenMissing: true },
   { id: 'file-manager', name: 'Files', labelKey: 'app.fileManager', icon: 'file-manager', command: 'xdg-open' },
 ];
 

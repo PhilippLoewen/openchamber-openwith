@@ -43,6 +43,32 @@ const os: OpenAppOS =
 /** How long a detection result is trusted before the next read re-checks. */
 const DETECTION_TTL_MS = 30_000;
 
+/** Where the JetBrains Toolbox App puts its launcher scripts by default. */
+const toolboxScriptsDir = (): string | undefined => {
+  const { HOME, LOCALAPPDATA } = process.env;
+  if (os === 'linux' && HOME) return path.join(HOME, '.local', 'share', 'JetBrains', 'Toolbox', 'scripts');
+  if (os === 'macos' && HOME) return path.join(HOME, 'Library', 'Application Support', 'JetBrains', 'Toolbox', 'scripts');
+  if (os === 'windows' && LOCALAPPDATA) return path.join(LOCALAPPDATA, 'JetBrains', 'Toolbox', 'scripts');
+  return undefined;
+};
+
+/**
+ * `env` with the Toolbox scripts folder appended to PATH. The Toolbox App adds
+ * it to the login shell's PATH only, which the host does not inherit.
+ */
+const withToolboxPath = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => {
+  const dir = toolboxScriptsDir();
+  if (!dir) return env;
+  // Windows spells it `Path`; keep whichever key is there.
+  const key = Object.keys(env).find((name) => name.toUpperCase() === 'PATH') ?? 'PATH';
+  const entries = (env[key] ?? '').split(path.delimiter).filter(Boolean);
+  if (entries.includes(dir)) return env;
+  return { ...env, [key]: [...entries, dir].join(path.delimiter) };
+};
+
+/** The environment for command lookups and launches. */
+const baseEnv = withToolboxPath(process.env);
+
 // ---------------------------------------------------------------------------
 // Detection
 // ---------------------------------------------------------------------------
@@ -58,7 +84,7 @@ const onPath = (command: string): Promise<boolean> =>
     let child: ChildProcess;
     try {
       // windowsHide stops a console-less host from flashing a window per lookup.
-      child = spawn(finder, [command], { stdio: 'ignore', windowsHide: true });
+      child = spawn(finder, [command], { env: baseEnv, stdio: 'ignore', windowsHide: true });
     } catch {
       resolve(false);
       return;
@@ -90,6 +116,15 @@ const macBundleExists = async (name: string): Promise<boolean> => {
   return false;
 };
 
+/** The first of the app's bundle names that is installed. */
+const macBundle = async (app: OpenApp): Promise<string | undefined> => {
+  const names = app.macApp ? [app.macApp, ...(app.macAppAliases ?? [])] : [];
+  for (const name of names) {
+    if (await macBundleExists(name)) return name;
+  }
+  return undefined;
+};
+
 const commandOnPath = async (app: OpenApp): Promise<string | undefined> => {
   const commands = app.command ? [app.command, ...(app.commandAliases ?? [])] : [];
   for (const command of commands) {
@@ -102,7 +137,7 @@ const appInstalled = async (app: OpenApp): Promise<boolean> => {
   if (os === 'macos') {
     // A bundle is the usual install; a command covers Homebrew CLIs and editors
     // whose `code`-style launcher was added to PATH.
-    if (app.macApp && (await macBundleExists(app.macApp))) return true;
+    if (await macBundle(app)) return true;
     if (app.command && (await onPath(app.command))) return true;
     return false;
   }
@@ -140,14 +175,14 @@ const detectCached = (force: boolean): Promise<Detection> => {
  */
 const launchEnv: Promise<NodeJS.ProcessEnv> =
   os === 'linux'
-    ? loadSessionEnv(process.env).then(({ env, filled, missing }) => {
+    ? loadSessionEnv(baseEnv).then(({ env, filled, missing }) => {
         if (filled.length > 0) {
           log(`session env filled in: ${filled.map(({ name, from }) => `${name} (${from})`).join(', ')}`);
         }
         if (missing.length > 0) log(`session env still missing: ${missing.join(', ')}`);
         return env;
       })
-    : Promise.resolve(process.env);
+    : Promise.resolve(baseEnv);
 
 type LaunchPlan = {
   file: string;
@@ -171,7 +206,7 @@ const isWindowsBatch = (command: string): Promise<boolean> =>
   new Promise((resolve) => {
     let child: ChildProcess;
     try {
-      child = spawn('where', [command], { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
+      child = spawn('where', [command], { env: baseEnv, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
     } catch {
       resolve(false);
       return;
@@ -224,7 +259,11 @@ const launchPlan = async (app: OpenApp, directory: string): Promise<LaunchPlan |
     return planFor(command, [directory], directory);
   }
   if (os === 'macos' && app.macApp) {
-    return { file: 'open', args: ['-a', app.macApp, directory], cwd: directory, shell: false, windowsHide: false };
+    const bundle = await macBundle(app);
+    // Found only by its command, e.g. a Toolbox script for an IDE kept outside
+    // the usual folders: the command is the launcher that is known to exist.
+    if (!bundle && app.command && (await onPath(app.command))) return planFor(app.command, [directory], directory);
+    return { file: 'open', args: ['-a', bundle ?? app.macApp, directory], cwd: directory, shell: false, windowsHide: false };
   }
   if (app.command) return planFor(app.command, [directory], directory);
   return null;

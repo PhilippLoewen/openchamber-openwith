@@ -41,6 +41,10 @@
 - **编辑器、终端、文件管理器** —— VS Code、VSCodium、Cursor、Zed、Sublime Text、TextMate、
   Antigravity、Xcode、Android Studio、终端、iTerm2、Ghostty、Warp，以及各平台的
   文件管理器（Finder／资源管理器／文件）。
+- **全部 JetBrains IDE** —— IntelliJ IDEA、PyCharm、WebStorm、PhpStorm、GoLand、
+  CLion、Rider、RubyMine、DataGrip、DataSpell 与 RustRover（Windows、Linux 上另含
+  Android Studio），无论经 Toolbox App 还是软件包安装。只有已安装的才会显示方块，
+  面板不会被一排灰色的 IDE 占满。
 - **自定义网页链接** —— 保存形如 `https://example.com/?path={path}` 的链接模板，
   在网页中打开当前项目；`{path}` 与 `{pathUrlEncode}` 会替换为项目路径。
 - **按平台检测** —— macOS 查 `.app` 与 PATH；Windows、Linux 查 PATH。
@@ -62,7 +66,11 @@ iframe 无法启动进程，因此扩展自带一个**本地服务**（`contribu
 - **`GET /apps`** 检测本机装了哪些软件。macOS 上，`.app` 位于 `/Applications`、
   `/System/Applications` 或 `~/Applications`，或其命令在 PATH 上，即视为已安装；
   Windows、Linux 上则用 `where` / `which` 查找命令。Linux 上的 Zed 同时支持 `zed`
-  和 `zeditor`，检测与启动均使用可用的命令，优先选择 `zed`。结果会缓存一小段时间，
+  和 `zeditor`，检测与启动均使用可用的命令，优先选择 `zed`。JetBrains IDE 按启动器
+  （`idea`、`pycharm`、`webstorm` 等，以及 snap、AUR 的名称如
+  `intellij-idea-ultimate-edition`，Windows 上的 `<名称>64`）、macOS 上按各版本的
+  应用名（`IntelliJ IDEA CE`、`PyCharm Professional Edition` 等）检测，并会查找
+  JetBrains Toolbox 的脚本目录，即使它不在宿主的 PATH 上。结果会缓存一小段时间，
   带 `?refresh=1` 可立即重新检测。
 - **`POST /open`** 校验项目目录与软件后启动它。macOS 上编辑器优先用自带命令行
   （`code`、`cursor`、`zed`、`subl <目录>`）：它会把目录交给已运行的实例并把窗口带到

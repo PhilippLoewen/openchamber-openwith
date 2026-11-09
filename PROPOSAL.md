@@ -84,9 +84,15 @@ panel (iframe) --openUrl--> host --browser--> https://example.com/?path=<project
 面板按平台给出不同清单（`src/apps.ts`）：
 
 - **macOS**：VS Code、Cursor、Zed、Sublime Text、TextMate、Antigravity、Xcode、
-  Android Studio、iTerm2、Ghostty、Warp、终端、Finder。
-- **Windows**：VS Code、Cursor、Zed、Sublime Text、PowerShell、资源管理器。
-- **Linux**：VS Code、Cursor、Zed、Sublime Text、文件。
+  Android Studio、JetBrains IDE、iTerm2、Ghostty、Warp、终端、Finder。
+- **Windows**：VS Code、Cursor、Zed、Sublime Text、JetBrains IDE、Android Studio、
+  PowerShell、资源管理器。
+- **Linux**：VS Code、Cursor、Zed、Sublime Text、JetBrains IDE、Android Studio、文件。
+
+JetBrains IDE 指 IntelliJ IDEA、PyCharm、WebStorm、PhpStorm、GoLand、CLion、Rider、
+RubyMine、DataGrip、DataSpell 与 RustRover。它们（以及 Windows、Linux 上的 Android
+Studio）带 `hideWhenMissing`：未安装时不显示灰色方块，免得十几个 IDE 挤满面板。服务
+在查找命令时会把 JetBrains Toolbox 的脚本目录追加到 PATH。
 
 图标（`src/icons.ts`）为 24×24 圆角方块：品牌色底 + 白色标记。标记一律用各家
 官方 logo：多数取自 [Simple Icons](https://simpleicons.org)（CC0-1.0），TextMate 与

@@ -16,7 +16,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test scripts/test-zed.mjs scripts/test-scope.mjs"
+    "test": "npm run build && node --test scripts/test-zed.mjs scripts/test-jetbrains.mjs scripts/test-scope.mjs"
   },
   "openchamber": {
     "apiVersion": 1,
@@ -35,7 +35,7 @@
         "entry": "service/main.js",
         "runtime": "host",
         "permissions": {
-          "exec": ["open", "cmd", "which", "where", "systemctl", "systemd-run", "code", "codium", "cursor", "zed", "zeditor", "subl", "ghostty", "warp", "powershell", "explorer", "xdg-open"]
+          "exec": ["open", "cmd", "which", "where", "systemctl", "systemd-run", "code", "codium", "cursor", "zed", "zeditor", "subl", "idea", "idea64", "intellij-idea", "intellij-idea-ultimate-edition", "intellij-idea-community-edition", "intellij-idea-ultimate", "intellij-idea-community", "pycharm", "pycharm64", "pycharm-professional", "pycharm-community", "charm", "webstorm", "webstorm64", "phpstorm", "phpstorm64", "goland", "goland64", "clion", "clion64", "rider", "rider64", "rubymine", "rubymine64", "datagrip", "datagrip64", "dataspell", "dataspell64", "rustrover", "rustrover64", "android-studio", "studio", "studio64", "ghostty", "warp", "powershell", "explorer", "xdg-open"]
         }
       }
     }

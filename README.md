@@ -46,6 +46,11 @@ installed app and the project OpenChamber has open is opened in it.
   Sublime Text, TextMate, Antigravity, Xcode, Android Studio, Terminal, iTerm2,
   Ghostty, Warp, and the platform's file manager (Finder / File Explorer /
   Files).
+- **Every JetBrains IDE** — IntelliJ IDEA, PyCharm, WebStorm, PhpStorm, GoLand,
+  CLion, Rider, RubyMine, DataGrip, DataSpell and RustRover (plus Android Studio
+  on Windows and Linux), installed through the Toolbox App or a package. They
+  only get a tile when they are installed, so the panel is not flooded with
+  greyed-out IDEs.
 - **Your own web links** — save URL templates such as
   `https://example.com/?path={path}` and open the project on that page;
   `{path}` and `{pathUrlEncode}` are filled with the project directory.
@@ -75,6 +80,11 @@ panel (iframe) --serviceRequest--> host --127.0.0.1:port--> service --spawn--> o
   command is looked up with `where` / `which`. The result is cached for a short
   while, and `?refresh=1` re-checks on demand. On Linux, Zed supports both `zed`
   and `zeditor`; the available command is also used to launch it, preferring `zed`.
+  JetBrains IDEs are found by their launcher (`idea`, `pycharm`, `webstorm`, …,
+  plus snap and AUR names such as `intellij-idea-ultimate-edition`, and
+  `<name>64` on Windows), by edition-specific bundle names on macOS (`IntelliJ
+  IDEA CE`, `PyCharm Professional Edition`, …), and in the JetBrains Toolbox
+  scripts folder, which is searched even when it is not on the host's PATH.
 - **`POST /open`** validates the project directory and the app, then launches it.
   On macOS an editor is opened with its own CLI (`code`, `cursor`, `zed`,
   `subl <directory>`), which opens the folder in a running instance and raises

@@ -712,7 +712,7 @@ const paint = (): void => {
   const grid = body.appendChild(el('div', 'ow-grid'));
   if (mode === 'service' && appsLoaded) {
     const installedApps = apps.filter((app) => installed[app.id] === true);
-    const missingApps = apps.filter((app) => installed[app.id] !== true);
+    const missingApps = apps.filter((app) => installed[app.id] !== true && !app.hideWhenMissing);
     for (const app of installedApps) grid.appendChild(renderTile(app));
     for (const link of webLinks) grid.appendChild(renderLinkTile(link));
     if (webLinks.length < WEB_LINKS_MAX) grid.appendChild(renderAddTile());

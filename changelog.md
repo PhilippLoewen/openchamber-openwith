@@ -3,6 +3,7 @@
 本项目的所有变更都记录在此文件：每行一条，格式为「类型 日期 描述」，类型取 `新增`／`优化`／`修复`，最新的变更排在最上面，不再按版本号分组。
 
 - 修复 2026-11-09 Linux 上重启 OpenChamber 服务时，从面板打开的编辑器不再随之关闭
+- 新增 2026-11-09 支持全部 JetBrains IDE（IntelliJ IDEA、PyCharm、WebStorm、PhpStorm、GoLand、CLion、Rider、RubyMine、DataGrip、DataSpell、RustRover），可识别 Toolbox App 与各类软件包安装，仅在已安装时显示；Windows、Linux 上同时支持 Android Studio
 - 修复 2026-10-25 Linux 上以 zeditor 命令安装的 Zed 现可正确识别并打开项目
 - 修复 2026-10-24 Linux 上宿主未把桌面会话环境变量传给本地服务，导致文件管理器与编辑器无法打开；现从 systemd 用户会话补齐
 - 修复 2026-10-24 软件改为在项目目录中启动，服务的工作目录被重新构建删除后不再导致 Linux 文件管理器报错
